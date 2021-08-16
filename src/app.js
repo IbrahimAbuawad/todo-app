@@ -34,6 +34,7 @@ function App() {
     })
     setList(newList)
   }
+  //yes
 
   function toggleComplete(id) {
 
