@@ -1,13 +1,13 @@
-import { FormGroup, InputGroup, Button, Card, Elevation, Callout } from '@blueprintjs/core';
+import { FormGroup, InputGroup, Button, Card, Elevation, Switch } from '@blueprintjs/core';
 import React, { useEffect, useState, useContext } from 'react';
 
 import { SettingsContext } from '../Context'
 import useForm from '../../hooks/form';
 import { v4 as uuid } from 'uuid';
+import Header from '../Header/Header';
 
 
 const ToDo = () => {
-
   const settings = useContext(SettingsContext);
   const [list, setList] = useState([]);
   const [incomplete, setIncomplete] = useState([]);
@@ -16,11 +16,15 @@ const ToDo = () => {
   const [endIndex, setEndIndex] = useState(settings.itemNumber);
 
 
+
+
   function addItem(item) {
     console.log(item);
     item.id = uuid();
     item.complete = false;
     setList([...list, item]);
+    
+    localStorage.setItem('List', JSON.stringify(list))
   }
 
 
@@ -33,6 +37,7 @@ const ToDo = () => {
 
     })
     setList(newList)
+
   }
   //yes
 
@@ -56,14 +61,38 @@ const ToDo = () => {
   }, [incomplete, list]);
 
 
+  useEffect(() => {
+    setStartIndex(0);
+    setEndIndex(settings.itemNumber)
+
+  }, [settings.itemNumber])
+
+  useEffect(() => {
+    if(JSON.parse(localStorage.getItem('List'))){
+      setList(JSON.parse(localStorage.getItem('List')))
+    }
+    
+    return ()=>{
+      let localList = JSON.parse(localStorage.getItem('List'))
+      console.log(localList)
+      setList(localList);
+    }
+   
+  },[])
+
+  function clear(){
+    localStorage.clear();
+    setList([])
+  }
 
   function pagination() {
     let result = list.slice(startIndex, endIndex);
     return result;
+
   }
 
   function next() {
-    setStartIndex(startIndex + settings.itemNumber);
+    setStartIndex(startIndex + settings.itemNumber - 1);
     setEndIndex(endIndex + settings.itemNumber);
   }
 
@@ -71,16 +100,14 @@ const ToDo = () => {
     setStartIndex(startIndex - settings.itemNumber);
     setEndIndex(endIndex - settings.itemNumber);
   }
-
+  function handlePaginationChange(e) {
+    settings.setItemNumber(e.target.value);
+  }
 
 
   return (
     <>
-      <Callout interactive={false} elevation={Elevation.TWO}>
-        <header>
-          <h3>To Do List: {incomplete} items pending</h3>
-        </header>
-      </Callout>
+      <Header incomplete={incomplete} />
 
       <Card elevation={3} style={{ width: '35rem', margin: 'auto' }}>
         <form>
@@ -93,7 +120,7 @@ const ToDo = () => {
             labelFor="item-details"
 
           >
-            <InputGroup name="text" id="item-details" placeholder="Item Details" onChange={handleChange} />
+            <InputGroup name="text" id="item-details" placeholder="Item Details" onChange={handleChange} autoComplete='off' />
           </FormGroup>
           <FormGroup
             // inline={true}
@@ -102,7 +129,7 @@ const ToDo = () => {
             labelFor="Assignee-Name"
 
           >
-            <InputGroup name="assignee" id="Assignee-Name" placeholder="Assignee Name" onChange={handleChange} />
+            <InputGroup name="assignee" id="Assignee-Name" placeholder="Assignee Name" onChange={handleChange} autoComplete='off' />
           </FormGroup >
           <FormGroup
             // inline={true}
@@ -123,8 +150,26 @@ const ToDo = () => {
             />
 
           </FormGroup>
+          <FormGroup
+            // inline={true}
+            label="items per screen"
+            labelFor="items per screen"
 
+          >
+            <InputGroup
+              name="items_per_screen"
+              id="items_per"
+              type='range'
+              min={1}
+              max={5}
+              initialValue={3}
+              labelStepSize={1}
+              onChange={handlePaginationChange}
+            />
+
+          </FormGroup>
           <Button intent='success' onClick={handleSubmit}>click here</Button>
+          <Button style={{marginLeft:'10px'}} intent='danger' onClick={clear}>Clear List</Button>
 
         </form>
       </Card>
@@ -132,9 +177,9 @@ const ToDo = () => {
       {pagination().map((item, idx) => (
         <>
 
-<br></br>
+          <br></br>
 
-          <Card vertical={true} style={{ width: '20rem' }} id={item.id} interactive={true} elevation={Elevation.THREE}>
+          <Card vertical={true} style={{ width: '20rem' }} id={idx} interactive={true} elevation={Elevation.THREE}>
             {!item.complete &&
               <>
                 <h5>{item.text}</h5>
@@ -142,8 +187,9 @@ const ToDo = () => {
                 <p><small>Difficulty: {item.difficulty}</small></p>
               </>
             }
-            <div onClick={() => toggleComplete(idx)}>Complete: {item.complete.toString()}</div>
+            <Switch onClick={() => toggleComplete(idx)}>Complete: {item.complete.toString()}</Switch>
             <Button intent='danger' onClick={() => deleteItem(idx)}>X</Button>
+
           </Card>
         </>
 
