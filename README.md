@@ -6,4 +6,4 @@
 
 [Netlify](https://eloquent-beaver-ad07d6.netlify.app)
 
-[sandbox](https://codesandbox.io/s/nervous-leftpad-ynqgm)
+[sandbox](https://codesandbox.io/s/heuristic-mendeleev-e7bhl)
