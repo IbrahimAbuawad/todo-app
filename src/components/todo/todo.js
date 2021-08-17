@@ -195,8 +195,8 @@ const ToDo = () => {
 
       ))}
 
-      <button onClick={previous}>Previous</button>
-      <button onClick={next}>Next</button>
+      <Button intent='warning' large={true} style={{marginLeft:'40%'}} onClick={previous}>Previous</Button>
+      <Button intent='primary' large={true} style={{marginLeft:'10px'}} onClick={next}>Next</Button>
     </>
   );
 };
