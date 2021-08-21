@@ -3,12 +3,12 @@ import React, { useEffect, useState, useContext } from 'react';
 import { SettingsContext } from '../context/Settings'
 import { AuthContext } from '../context/ContextAuth';
 import useForm from '../../hooks/form';
-import { v4 as uuid } from 'uuid';
 import Header from '../Header/Header';
 import Lists from '../lists/Lists';
 import Footer from '../footer/Footer';
 import Form from '../form/Form';
-
+import superagent from 'superagent';
+import axios from "axios";
 
 const ToDo = () => {
   const settings = useContext(SettingsContext);
@@ -18,19 +18,31 @@ const ToDo = () => {
   const { handleChange, handleSubmit } = useForm(addItem);
   const [startIndex, setStartIndex] = useState(0);
   const [endIndex, setEndIndex] = useState(settings.itemNumber);
+  const API = 'https://api-js401.herokuapp.com/api/v1/todo';
 
 
 
-  function addItem(item) {
+  async function addItem(item) {
     const data = {
-      id: uuid(),
+
       text: item.text,
       assignee: item.assignee,
       difficulty: item.difficulty,
-      complete: false,
+      complete: false
     };
-    localStorage.setItem('List', JSON.stringify([...list, data]));
-    setList(JSON.parse(localStorage.getItem('List')));
+
+    try {
+      await superagent.post(`${API}`).send(data)
+
+
+      const getResponse = await superagent.get(`${API}`);
+      setList(JSON.parse(getResponse.text).results);
+    }
+    catch (error) {
+      console.error()
+    }
+    // localStorage.setItem('List', JSON.stringify([...list, data]));
+    // setList(JSON.parse(localStorage.getItem('List')));
 
 
   }
@@ -39,15 +51,14 @@ const ToDo = () => {
   function deleteItem(id) {
     if (loggedIn && user.capabilities.includes('delete')) {
 
-      let newList = [];
+      list.map(async e => {
+        if (e._id === id) {
+          await axios.delete(`${API}/${id}`);
+          const data = await axios.get(`${API}`);
+          setList(data.data.results);
 
-      list.map((e, idx) => {
-        if (idx !== id) newList.push(e);
-        return 0;
-
+        }
       })
-      localStorage.setItem('List', JSON.stringify(newList));
-      setList(JSON.parse(localStorage.getItem('List')));
     }
     else {
       window.alert('You can not remove items');
@@ -55,35 +66,79 @@ const ToDo = () => {
 
 
   }
+  // let newList = [];
+
+  // list.map((e, idx) => {
+  //   if (idx !== id) newList.push(e);
+  //   return 0;
+
+  // })
+  // localStorage.setItem('List', JSON.stringify(newList));
+  // setList(JSON.parse(localStorage.getItem('List')));
+
   //yes
 
-  function toggleComplete(id) {
+  async function toggleComplete(id) {
     if (loggedIn && user.capabilities.includes('update')) {
-      const items = list.map((item, idx) => {
-        if (idx === id) {
-          item.complete = !item.complete;
-        }
-        return item;
-      });
 
-      setList(items);
-      localStorage.setItem('List', JSON.stringify(list))
+      try {
+        // const getResponse = await superagent.get(`${API}`);
+        list.map(async e => {
+          if (e._id === id) {
+            let data = {
+              'complete': !e.complete
+            }
+            await axios.put(`${API}/${id}`, data);
+            const data1 = await axios.get(`${API}`);
+            setList(data1.data.results)
+          }
 
+        })
+
+      }
+      catch {
+        console.error();
+      }
     }
     else {
       window.alert('You can not change it')
     }
   }
+  // const items = list.map((item, idx) => {
+  //   if (idx === id) {
+  //    return !item.complete;
+
+  // return item;
+  // setList(items);
+  // localStorage.setItem('List', JSON.stringify(list))
+
+
+
+
+  // })
 
   useEffect(() => {
+
     const currentStorage = localStorage.getItem('currentStorage');
     if (currentStorage) {
       settings.setItemNumber(Number(currentStorage));
     }
-    const localStorageList = JSON.parse(localStorage.getItem('List'))
-    if (localStorageList) {
-      setList(localStorageList)
-    }
+    // const localStorageList = JSON.parse(localStorage.getItem('List'))
+    // if (localStorageList) {
+    //   setList(localStorageList)
+    // }
+    (async () => {
+      try {
+
+        const getResponse = await superagent.get(`${API}`);
+        setList(JSON.parse(getResponse.text).results);
+      }
+      catch (error) {
+        console.error()
+      }
+    })()
+
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -107,7 +162,12 @@ const ToDo = () => {
 
 
   function clear() {
-    localStorage.clear();
+    // localStorage.clear();
+    // setList([])
+
+    list.map(async e => {
+     await axios.delete(`${API}/${e._id}`);
+    })
     setList([])
   }
 
