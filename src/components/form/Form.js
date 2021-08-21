@@ -4,7 +4,7 @@ import { AuthContext } from '../context/ContextAuth';
 
 
 function Form(props) {
-  const { user} = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
 
  
 
