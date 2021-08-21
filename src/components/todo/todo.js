@@ -1,16 +1,18 @@
 import React, { useEffect, useState, useContext } from 'react';
 
-import { SettingsContext } from '../Context'
+import { SettingsContext } from '../context/Settings'
+import { AuthContext } from '../context/ContextAuth';
 import useForm from '../../hooks/form';
 import { v4 as uuid } from 'uuid';
 import Header from '../Header/Header';
-import Lists from '../Lists';
-import Footer from '../Footer';
-import  Form  from '../Form';
+import Lists from '../lists/Lists';
+import Footer from '../footer/Footer';
+import Form from '../form/Form';
 
 
 const ToDo = () => {
   const settings = useContext(SettingsContext);
+  const { loggedIn, user } = useContext(AuthContext);
   const [list, setList] = useState([]);
   const [incomplete, setIncomplete] = useState([]);
   const { handleChange, handleSubmit } = useForm(addItem);
@@ -19,8 +21,7 @@ const ToDo = () => {
 
 
 
-
-   function addItem(item) {
+  function addItem(item) {
     const data = {
       id: uuid(),
       text: item.text,
@@ -36,32 +37,44 @@ const ToDo = () => {
 
 
   function deleteItem(id) {
-    let newList = [];
+    if (loggedIn && user.capabilities.includes('delete')) {
 
-    list.map((e, idx) => {
-      if (idx !== id) newList.push(e);
-      return 0;
+      let newList = [];
 
-    })
-    localStorage.setItem('List', JSON.stringify(newList));
-    setList(JSON.parse(localStorage.getItem('List')));
+      list.map((e, idx) => {
+        if (idx !== id) newList.push(e);
+        return 0;
+
+      })
+      localStorage.setItem('List', JSON.stringify(newList));
+      setList(JSON.parse(localStorage.getItem('List')));
+    }
+    else {
+      window.alert('You can not remove items');
+    }
+
 
   }
   //yes
 
   function toggleComplete(id) {
+    if (loggedIn && user.capabilities.includes('update')) {
+      const items = list.map((item, idx) => {
+        if (idx === id) {
+          item.complete = !item.complete;
+        }
+        return item;
+      });
 
-    const items = list.map((item, idx) => {
-      if (idx === id) {
-        item.complete = !item.complete;
-      }
-      return item;
-    });
+      setList(items);
+      localStorage.setItem('List', JSON.stringify(list))
 
-    setList(items);
-    localStorage.setItem('List', JSON.stringify(list))
-
+    }
+    else {
+      window.alert('You can not change it')
+    }
   }
+
   useEffect(() => {
     const currentStorage = localStorage.getItem('currentStorage');
     if (currentStorage) {
