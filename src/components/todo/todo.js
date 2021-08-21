@@ -159,7 +159,20 @@ const ToDo = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.itemNumber])
 
+  useEffect(() => {
+   
+    (async () => {
+      try {
 
+        const getResponse = await axios.get(`${API}`);
+        setList(getResponse.data.results);
+      }
+      catch (error) {
+        console.error()
+      }
+    })()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  })
 
   function clear() {
     // localStorage.clear();
