@@ -1,10 +1,12 @@
-import { FormGroup, InputGroup, Button, Card, Elevation, Switch } from '@blueprintjs/core';
 import React, { useEffect, useState, useContext } from 'react';
 
 import { SettingsContext } from '../Context'
 import useForm from '../../hooks/form';
 import { v4 as uuid } from 'uuid';
 import Header from '../Header/Header';
+import Lists from '../Lists';
+import Footer from '../Footer';
+import  Form  from '../Form';
 
 
 const ToDo = () => {
@@ -18,13 +20,18 @@ const ToDo = () => {
 
 
 
-  function addItem(item) {
-    console.log(item);
-    item.id = uuid();
-    item.complete = false;
-    setList([...list, item]);
-    
-    localStorage.setItem('List', JSON.stringify(list))
+   function addItem(item) {
+    const data = {
+      id: uuid(),
+      text: item.text,
+      assignee: item.assignee,
+      difficulty: item.difficulty,
+      complete: false,
+    };
+    localStorage.setItem('List', JSON.stringify([...list, data]));
+    setList(JSON.parse(localStorage.getItem('List')));
+
+
   }
 
 
@@ -36,7 +43,8 @@ const ToDo = () => {
       return 0;
 
     })
-    setList(newList)
+    localStorage.setItem('List', JSON.stringify(newList));
+    setList(JSON.parse(localStorage.getItem('List')));
 
   }
   //yes
@@ -51,8 +59,20 @@ const ToDo = () => {
     });
 
     setList(items);
+    localStorage.setItem('List', JSON.stringify(list))
 
   }
+  useEffect(() => {
+    const currentStorage = localStorage.getItem('currentStorage');
+    if (currentStorage) {
+      settings.setItemNumber(Number(currentStorage));
+    }
+    const localStorageList = JSON.parse(localStorage.getItem('List'))
+    if (localStorageList) {
+      setList(localStorageList)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     let incompleteCount = list.filter(item => !item.complete).length;
@@ -64,23 +84,16 @@ const ToDo = () => {
   useEffect(() => {
     setStartIndex(0);
     setEndIndex(settings.itemNumber)
+    localStorage.setItem('storage', Number(settings.itemNumber));
+    const storage = localStorage.getItem('storage');
+    localStorage.setItem('currentStorage', storage);
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.itemNumber])
 
-  useEffect(() => {
-    if(JSON.parse(localStorage.getItem('List'))){
-      setList(JSON.parse(localStorage.getItem('List')))
-    }
-    
-    return ()=>{
-      let localList = JSON.parse(localStorage.getItem('List'))
-      console.log(localList)
-      setList(localList);
-    }
-   
-  },[])
 
-  function clear(){
+
+  function clear() {
     localStorage.clear();
     setList([])
   }
@@ -92,13 +105,13 @@ const ToDo = () => {
   }
 
   function next() {
-    setStartIndex(startIndex + settings.itemNumber - 1);
-    setEndIndex(endIndex + settings.itemNumber);
+    setStartIndex(startIndex + settings.itemNumber);//5
+    setEndIndex(endIndex + settings.itemNumber);//10
   }
 
   function previous() {
-    setStartIndex(startIndex - settings.itemNumber);
-    setEndIndex(endIndex - settings.itemNumber);
+    setStartIndex(startIndex - settings.itemNumber);//0
+    setEndIndex(endIndex - settings.itemNumber);//5
   }
   function handlePaginationChange(e) {
     settings.setItemNumber(e.target.value);
@@ -109,94 +122,33 @@ const ToDo = () => {
     <>
       <Header incomplete={incomplete} />
 
-      <Card elevation={3} style={{ width: '35rem', margin: 'auto' }}>
-        <form>
+      <Form
+        handleChange={handleChange}
+        handleSubmit={handleSubmit}
+        handlePaginationChange={handlePaginationChange}
+        clear={clear}
+      />
 
-
-          <FormGroup
-            // inline={true}
-            helperText="Choose any item you want"
-            label="To Do Item"
-            labelFor="item-details"
-
-          >
-            <InputGroup name="text" id="item-details" placeholder="Item Details" onChange={handleChange} autoComplete='off' />
-          </FormGroup>
-          <FormGroup
-            // inline={true}
-            helperText="Choose person name"
-            label="Assigned To"
-            labelFor="Assignee-Name"
-
-          >
-            <InputGroup name="assignee" id="Assignee-Name" placeholder="Assignee Name" onChange={handleChange} autoComplete='off' />
-          </FormGroup >
-          <FormGroup
-            // inline={true}
-            label="difficulty"
-            labelFor="item-details"
-
-          >
-            <InputGroup
-              name="difficulty"
-              id="difficulty"
-              type='range'
-              placeholder="Assignee Name"
-              min={0}
-              max={5}
-              initialValue={3}
-              labelStepSize={5}
-              onChange={handleChange}
-            />
-
-          </FormGroup>
-          <FormGroup
-            // inline={true}
-            label="items per screen"
-            labelFor="items per screen"
-
-          >
-            <InputGroup
-              name="items_per_screen"
-              id="items_per"
-              type='range'
-              min={1}
-              max={5}
-              initialValue={3}
-              labelStepSize={1}
-              onChange={handlePaginationChange}
-            />
-
-          </FormGroup>
-          <Button intent='success' onClick={handleSubmit}>click here</Button>
-          <Button style={{marginLeft:'10px'}} intent='danger' onClick={clear}>Clear List</Button>
-
-        </form>
-      </Card>
       <br></br>
       {pagination().map((item, idx) => (
         <>
 
           <br></br>
+          <Lists
+            item={item}
+            idx={idx}
+            deleteItem={deleteItem}
+            toggleComplete={toggleComplete}
+          />
 
-          <Card vertical={true} style={{ width: '20rem' }} id={idx} interactive={true} elevation={Elevation.THREE}>
-            {!item.complete &&
-              <>
-                <h5>{item.text}</h5>
-                <p><small>Assigned to: {item.assignee}</small></p>
-                <p><small>Difficulty: {item.difficulty}</small></p>
-              </>
-            }
-            <Switch onClick={() => toggleComplete(idx)}>Complete: {item.complete.toString()}</Switch>
-            <Button intent='danger' onClick={() => deleteItem(idx)}>X</Button>
-
-          </Card>
         </>
 
       ))}
+      <Footer
+        next={next}
+        previous={previous}
+      />
 
-      <Button intent='warning' large={true} style={{marginLeft:'40%'}} onClick={previous}>Previous</Button>
-      <Button intent='primary' large={true} style={{marginLeft:'10px'}} onClick={next}>Next</Button>
     </>
   );
 };
